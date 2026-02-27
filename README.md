@@ -295,3 +295,15 @@ You now have a deterministic, resilient environment. Open Cursor Composer and is
 > *"Analyze the Postgres and MongoDB schemas using your MCP tools. Write a new FastAPI route in `main.py` at `/api/user-summary/{user_id}`. This route should fetch the user's details from Postgres, handle cases where the user doesn't exist, and then fetch three recommended 'Electronics' products from MongoDB. Use the existing `pg_conn` and `mongo_db` globals."*
 
 Cursor will actively query your local databases to verify the table shapes, write the exact `psycopg2` and `pymongo` syntax required, inject it into `main.py`, and Uvicorn will seamlessly reload your live API.
+
+---
+
+### Future Enhancements for Performance
+
+As your dataset grows, you may want to optimize the MCP layer for speed and efficiency. Here are several strategies to consider:
+
+1.  **Schema Caching**: Currently, the MCP server may query `information_schema` frequently. Implementing a caching layer (e.g., Redis) for schema metadata can significantly reduce latency for repeated schema lookups.
+2.  **Connection Pooling**: Instead of opening a new database connection for every MCP tool call, use a connection pool (like `pgbouncer` for Postgres) to maintain persistent connections, reducing the overhead of the TCP handshake.
+3.  **Read Replicas**: Point the MCP server to a read-only replica of your database. This ensures that heavy analytical queries from the AI do not impact the performance of your primary transactional database.
+4.  **Sidecar Deployment**: In a Kubernetes environment, deploy the MCP server as a sidecar container to your database pod. This minimizes network latency by keeping traffic within the same pod or node.
+5.  **Specialized Indexes**: Create database indexes specifically for the types of queries the AI tends to run (e.g., searching by `created_at` or specific text fields) to speed up the "exploration" phase.
