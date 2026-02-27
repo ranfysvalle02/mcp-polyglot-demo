@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: demo-postgres
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-init:/docker-entrypoint-initdb.d
+      - postgres-data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongodb/mongodb-atlas-local:latest
+    container_name: demo-mongodb
+    hostname: mongodb
+    env_file: .env
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=${DB_USER}
+      - MONGODB_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo-init:/docker-entrypoint-initdb.d
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+
+  api:
+    build: ./api
+    container_name: demo-fastapi
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - PG_INTERNAL_URI=${PG_INTERNAL_URI}
+      - MONGO_INTERNAL_URI=${MONGO_INTERNAL_URI}
+      - DB_NAME=${DB_NAME}
+    depends_on:
+      - postgres
+      - mongodb
+    volumes:
+      - ./api:/app
+
+volumes:
+  postgres-data:
+  mongo-data:
+  mongo-config:

@@ -233,17 +233,60 @@ volumes:
 ### Execution and Integration
 
 1. **Start the infrastructure:** Run `docker-compose up -d --build` from your terminal.
-2. **Configure Cursor MCP:** In Cursor, navigate to Settings > Features > MCP. Add the tools using your host network (`localhost`), as Cursor runs outside of the Docker bridge.
-* **Postgres MCP:**
-* `npx` | `-y`, `@modelcontextprotocol/server-postgres`, `postgresql://devuser:devpassword@localhost:5432/demo_db`
+2. **Configure Cursor MCP:** You can configure MCP servers manually in Settings, or use a project-specific `.cursor/mcp.json` file for automatic configuration.
 
+**Project Configuration (`.cursor/mcp.json`):**
 
-* **Mongo MCP:**
-* `npx` | `-y`, `cross-env`, `MDB_MCP_CONNECTION_STRING=mongodb://devuser:devpassword@localhost:27017/demo_db?authSource=admin`, `@mongodb-js/mongodb-mcp-server`
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://devuser:devpassword@localhost:5432/demo_db"
+      ]
+    },
+    "mongodb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mongodb-js/mongodb-mcp-server"
+      ],
+      "env": {
+        "MDB_MCP_CONNECTION_STRING": "mongodb://devuser:devpassword@localhost:27017/demo_db?authSource=admin"
+      }
+    }
+  }
+}
+```
 
+Once this file is saved, Cursor will automatically start the MCP servers.
 
+---
 
+### Lessons Learned & Demo Output
 
+#### 1. Zero-Friction Data Access
+By configuring MCP, we bridged the gap between the chat interface and the local Docker environment. Instead of guessing the schema, we could ask Cursor: *"Check the users table"*.
+
+**Sample Output (Postgres MCP):**
+Cursor executed `SELECT * FROM users LIMIT 5;` and returned:
+
+| id | name | email | created_at |
+| :--- | :--- | :--- | :--- |
+| 1 | Alice Johnson | alice@example.com | 2026-02-27T02:28:40.929Z |
+| 2 | Bob Smith | bob@example.com | 2026-02-27T02:28:40.929Z |
+| 3 | Charlie Brown | charlie@example.com | 2026-02-27T02:28:40.929Z |
+| 4 | Diana Prince | diana@example.com | 2026-02-27T02:28:40.929Z |
+| 5 | Evan Wright | evan@example.com | 2026-02-27T02:28:40.929Z |
+
+#### 2. Deterministic Context
+Because the AI can "see" the data, it doesn't hallucinate column names. If we ask it to write a JOIN query, it knows exactly which foreign keys exist.
+
+#### 3. Portable Configuration
+Using `.cursor/mcp.json` means any developer who clones this repo and opens it in Cursor gets the same powerful context immediately, without manual setup.
 
 ### The Workflow in Practice
 
